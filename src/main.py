@@ -1,5 +1,7 @@
 import os
 import numpy as np
+import datetime
+import sys
 from PIL import Image, ImageDraw, ImageFont
 from moviepy.editor import AudioFileClip, afx, ImageClip
 
@@ -12,9 +14,20 @@ def get_text_size(draw, message, font):
     _, _, w, h = draw.textbbox((0,0), message, font=font)
     return (w,h)
 
+def validate_date(val):
+    try:
+        return datetime.date.fromisoformat(val)
+    except Exception:
+        return False 
+
+
 # inputs
 course_num = int(input("Enter the number of the class you want: "))
-date_value = input("Enter the date of the video: ")
+date_value = input("Enter the date of the video (YYYY-MM-DD): ")
+
+if not validate_date(date_value):
+    sys.exit("Invalid date value")
+
 
 # constants
 COURSES = [
