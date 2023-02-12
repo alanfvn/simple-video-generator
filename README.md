@@ -18,7 +18,7 @@ then you should activate the environment with:
 lastly you need to install the script requirements with:
 
 ```bash
-pip install - r requirements.txt
+pip install -r requirements.txt
 ```
 
 ## Usage
