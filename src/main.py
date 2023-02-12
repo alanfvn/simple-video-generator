@@ -1,69 +1,46 @@
-import os
 import numpy as np
-import datetime
-import sys
 from PIL import Image, ImageDraw, ImageFont
 from moviepy.editor import AudioFileClip, afx, ImageClip
+# my modules
+from vdata import VideoData
+from dirs import get_input_dir, get_output_dir
+from files import get_files
 
-def get_file_name(name, date_val):
-    val1 = name.lower().replace(" ", ".")
-    val2 = date_val.replace("/", "_")
-    return f"{val2}-{val1}"
+# folders
+output = get_output_dir() 
+input = get_input_dir()
 
-def get_text_size(draw, message, font):
-    _, _, w, h = draw.textbbox((0,0), message, font=font)
-    return (w,h)
+def generate_video(vdata: VideoData):
+    # constants
+    SIZE = (1280, 720)
+    W,H = SIZE
+    FONT = ImageFont.truetype("times.ttf", 55)
+    PAD = 80
+    # video data 
+    course = vdata.course_name
+    vid_date = str(vdata.course_date)
+    file = vdata.audio_file_name
+    # image generation 
+    image  = Image.new('RGB', SIZE, 'black')
+    draw = ImageDraw.Draw(image)
+    # text calcs
+    _, _, w, h = draw.textbbox((0,0), course, font=FONT)
+    _, _, w1, _ = draw.textbbox((0,0), vid_date, font=FONT)
+    h_calc = (H-h)/2
+    # text draw
+    draw.text(((W-w)/2, h_calc), course, font=FONT, fill='white')
+    draw.text(((W-w1)/2, h_calc+PAD), vid_date, font=FONT, fill='white')
+    # video stuff
+    audio = AudioFileClip(f"{input}/{file}").fx(afx.volumex, 4.0)
+    clip = ImageClip(np.array(image)).set_duration(audio.duration)
+    clip = clip.set_audio(audio)
+    clip.write_videofile(f"{output}/{vdata.get_file_name()}.mp4", fps=24)
 
-def validate_date(val):
-    try:
-        return datetime.date.fromisoformat(val)
-    except Exception:
-        return False 
+def get_videos():
+    videos = get_files(input)
+    print(f"{len(videos)} audio files found... starting the conversion\n")
+    for video in videos:
+        generate_video(video)
+    print("Done!")
 
-
-# inputs
-course_num = int(input("Enter the number of the class you want: "))
-date_value = input("Enter the date of the video (YYYY-MM-DD): ")
-
-if not validate_date(date_value):
-    sys.exit("Invalid date value")
-
-
-# constants
-COURSES = [
-    "Admin. de tecnologias de la información", 
-    "Ingeniería de software",
-    "Inteligencia artificial",
-    "Proyecto de graduación 1",
-    "Redes de computadoras II",
-]
-
-SIZE = (1280, 720)
-W,H = SIZE
-FONT = ImageFont.truetype("times.ttf", 55)
-PAD = 80
-
-# vars
-image  = Image.new('RGB', SIZE, 'black')
-draw = ImageDraw.Draw(image)
-course = COURSES[course_num]
-file_name = get_file_name(course, date_value)
-
-# text calcs
-w,h = get_text_size(draw, course, FONT)
-w1,h1 = get_text_size(draw, date_value, FONT)
-h_calc = (H-h)/2
-
-# text draw
-draw.text(((W-w)/2, h_calc), course, font=FONT, fill='white')
-draw.text(((W-w1)/2, h_calc+PAD), date_value, font=FONT, fill='white')
-
-#files
-files = os.listdir('./input/')
-fname = files[0]
-
-# video stuff
-audio = AudioFileClip(f'./input/{fname}').fx(afx.volumex, 4.0)
-clip = ImageClip(np.array(image)).set_duration(audio.duration)
-clip = clip.set_audio(audio)
-clip.write_videofile(f'./output/{file_name}.mp4', fps=24)
+get_videos()
